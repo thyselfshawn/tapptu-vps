@@ -26,6 +26,8 @@ class User extends Authenticatable
         'password',
         'role',
         'avatar',
+        'phone',
+        'customer_id',
     ];
 
     /**
@@ -53,20 +55,13 @@ class User extends Authenticatable
         return $this->hasMany(Venue::class, 'user_id');
     }
 
-    public function firstVenue(){
+    public function firstVenue()
+    {
         return $this->hasOne(Venue::class, 'user_id')->latest();
     }
 
     public function vouchers()
     {
         return $this->hasManyThrough(Voucher::class, Venue::class, 'user_id', 'venue_id');
-    }
-    public function isPremiumMember(){
-        foreach ($this->venues() as $item) {
-            if($item->currentMembership()->membershipType() === 'premium'){
-                return true;
-            }
-        }
-        return false;
     }
 }

@@ -4,8 +4,8 @@ namespace App\Enums;
 
 enum PackageTypeEnum: string
 {
-    case monthly = 'monthly';
-    case yearly = 'yearly';
+    case month = 'month';
+    case year = 'year';
 
     public static function values(): array
     {

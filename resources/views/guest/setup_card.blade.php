@@ -7,20 +7,20 @@
                 @auth
                     <div class="card-header">{{ __('Venue') }}</div>
                     <div class="card-body">
-                        @php
-                            $venues = auth()->user()->venues;
-                        @endphp
-                        <div class="mb-3">
-                            <label for="venue" class="form-label">Add to existing Venue</label>
-                            <select class="form-select @error('venue') is-invalid @enderror" id="venue" name="venue">
-                                @foreach ($venues as $item)
-                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('venue')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        @if ($venues->count() > 0)
+                            <div class="mb-3">
+                                <label for="venue" class="form-label">Add to existing Venue</label>
+                                <select class="form-select @error('venue') is-invalid @enderror" id="venue" name="venue">
+                                    <option value="">All</option>
+                                    @foreach ($venues as $item)
+                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('venue')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @endif
                         <div class="mb-3">
                             <a class="btn btn-secondary" href="{{ route('venues.create') }}?card={{ $card->uuid }}">Create new
                                 Venue
@@ -41,13 +41,20 @@
 @endsection
 
 @push('scripts')
-    @if (auth()->user())
+    @if (auth()->check())
         <script>
-            document.getElementById('venue').addEventListener('change', function() {
-                var venueId = this.value;
-                if (venueId) {
-                    var url = '/attach-card/' + venueId;
-                    window.location.href = url;
+            document.addEventListener('DOMContentLoaded', function() {
+                const venueSelect = document.getElementById('venue');
+                if (venueSelect) {
+                    venueSelect.addEventListener('change', function() {
+                        const venueId = this.value;
+                        if (venueId) {
+                            const url =
+                                "{{ route('attach_card', ['id' => ':venueId', 'card' => $card->uuid]) }}"
+                                .replace(':venueId', venueId);
+                            window.location.href = url;
+                        }
+                    });
                 }
             });
         </script>

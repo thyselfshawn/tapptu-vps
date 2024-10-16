@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\CardVenue;
+use App\Models\Subscription;
+use App\Models\Package;
 use App\Models\User;
 use App\Models\Venue;
-use App\Models\Membership;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\RegistersUsers;
@@ -49,7 +50,7 @@ class RegisterController extends Controller
 
     public function showRegistrationForm()
     {
-        if(!session('setup-card')){
+        if (!session('setup-card')) {
             abort(403, 'You can not register without Card!');
         }
         return view('auth.register');
@@ -66,6 +67,7 @@ class RegisterController extends Controller
         return Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'phone' => ['required', 'string', 'max:255', 'unique:users,phone'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
     }
@@ -80,26 +82,28 @@ class RegisterController extends Controller
     {
         return DB::transaction(function () use ($data) {
             if (session('setup-card')) {
-                $rfid = Card::where('uuid', session('setup-card'))->first();
-                if ($rfid) {
+                $card = Card::where('uuid', session('setup-card'))->first();
+                if ($card) {
                     $user = User::create([
                         'name' => $data['name'],
                         'email' => $data['email'],
+                        'phone' => $data['phone'],
                         'password' => Hash::make($data['password']),
-                        'role' => 2,
+                        'role' => 'venue',
                     ]);
 
+                    // create venue and attach card
                     $venue = Venue::create(['user_id' => $user->id, 'name' => now()]);
-                    $cardvenue = CardVenue::create(['card_id' => $rfid->id, 'venue_id' => $venue->id]);
+                    CardVenue::create(['card_id' => $card->id, 'venue_id' => $venue->id]);
 
-                    $rfid->update(['status' => \App\Enums\CardStatusEnum::attached]);
-
-                    $member = Membership::create([
+                    $card->update(['status' => \App\Enums\CardStatusEnum::attached]);
+                    // activate trial
+                    $package = Package::where('name', operator: 'premium')->where('type', 'month')->first();
+                    Subscription::create([
                         'venue_id' => $venue->id,
-                        'package_id' => 3,
-                        'status' => 1
+                        'package_id' => $package->id,
+                        'status' => true
                     ]);
-
                     return $user;
                 }
             }
@@ -120,7 +124,7 @@ class RegisterController extends Controller
         }
 
         return $request->wantsJson()
-                    ? new JsonResponse([], 201)
-                    : redirect()->route('venues.edit', $user->firstVenue()->first()->slug);
+            ? new JsonResponse([], 201)
+            : redirect()->route('venues.edit', $user->firstVenue()->first()->slug);
     }
 }

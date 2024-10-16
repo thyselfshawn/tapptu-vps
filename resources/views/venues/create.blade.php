@@ -83,15 +83,14 @@
                         @enderror
                     </div>
                     <div class="col-12 mb-3">
-                        <div class="btn-group" role="group" aria-label="Date Range">
-                            <input type="radio" class="btn-check" name="notification" id="notificationoff" value="0"
-                                {{ old('notification') == 0 ? 'checked' : '' }}>
-                            <label class="btn btn-secondary" for="notificationoff">OFF</label>
-                            <input type="radio" class="btn-check" name="notification" id="notificationon" value="1"
-                                {{ old('notification') == 1 ? 'checked' : '' }}>
-                            <label class="btn btn-secondary" for="notificationon">ON</label>
+                        <label class="form-label d-block mb-2">Weekly email report</label>
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" name="notification" id="notificationToggle"
+                                value="1" {{ old('notification') == 1 ? 'checked' : 'Off' }}>
+                            <label class="form-check-label" for="notificationToggle">
+                                {{ old('notification') == 1 ? 'On' : 'Off' }}
+                            </label>
                         </div>
-                        <label class="form-label">Weekly email report</label>
                     </div>
                     <div class="col-4"><button type="submit" class="btn btn-secondary">Create</button></div>
                 </div>

@@ -1,7 +1,36 @@
 @extends('layouts.app')
-
+@push('styles')
+    <style>
+        @media (max-width: 600px) {
+            .img-fluid {
+                max-width: 75px;
+                width: 75px;
+                height: 75px;
+            }
+        }
+    </style>
+@endpush
 @section('content')
     <div class="container">
+        @if (empty($venue->currentSubscription()->xendit_plan_id))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                This venue is using trial
+                {{ strtoupper($venue->currentSubscription()->package->name) }}
+                ({{ strtolower($venue->currentSubscription()->package->type) }}ly)
+                subscription plan.
+                Ending at
+                {{ $venue->currentSubscription()->end_at->format('F j, Y') }}.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+        @if ($venue->currentSubscription() && $venue->currentSubscription()->isEndingSoon(7))
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                {{ $venue->name }}'s subscription ends in
+                {{ $venue->currentSubscription()->timeUntilEnds() }}.
+                Please renew soon!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
         <div class="card">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -28,11 +57,13 @@
                                             <i class="bi bi-link"></i>
                                         </a>
                                     </p>
+                                    <p class="card-text"><strong>Google Review Start:</strong>
+                                        {{ ucfirst($venue->googlereviewstart) }}</p>
                                     <p class="card-text"><strong>Status:</strong> {{ ucfirst($venue->status) }}</p>
                                 @endif
                             </div>
                             @if ($venue->logo)
-                                <img src="{{ route('guest.venues.image', ['filename' => $venue->logo]) }}" alt="Venue Logo"
+                                <img src="{{ route('venues.image', ['filename' => $venue->logo]) }}" alt="Venue Logo"
                                     class="img-fluid rounded-circle" style="max-width: 150px;" loading="lazy">
                             @endif
                         </div>
@@ -69,36 +100,34 @@
                         <div class="card">
                             <h5 class="card-header">Subscription Details</h5>
                             <div class="card-body">
-                                @if ($venue->currentMembership())
+                                @if ($venue->currentSubscription())
                                     <p>
                                         <strong>Current Package:</strong>
-                                        {{ $venue->currentMembership()->package->name }}
-                                        {{ $venue->currentMembership()->package->type }}
+                                        {{ $venue->currentSubscription()->package->name }}
+                                        {{ $venue->currentSubscription()->package->type }}
                                     </p>
                                     <p><strong>Next Billing Date:</strong>
-                                        {{ $venue->currentMembership()->end_at->format('F j, Y') }}</p>
+                                        {{ $venue->currentSubscription()->end_at->format('F j, Y') }}</p>
                                 @else
                                     <p>No active membership.</p>
                                 @endif
 
                                 <!-- Form for updating subscription -->
-                                <form action="{{ route('billing.subscribe', $venue->id) }}" method="POST">
+                                <form action="{{ route('billing.createSubscription') }}" method="POST">
                                     @csrf
                                     <div class="form-group mb-3">
+                                        <input type="text" name="venue" value="{{ $venue->slug }}" hidden>
                                         <label for="package">Select Package</label>
                                         <select name="package" id="package" class="form-control">
                                             @foreach ($packages as $package)
-                                                <option value="{{ $package->id }}">{{ $package->name }}</option>
+                                                @if (!$venue->currentSubscription() || $package->id !== $venue->currentSubscription()->package_id)
+                                                    <option value="{{ $package->id }}">{{ $package->name }}
+                                                        {{ $package->type }}ly</option>
+                                                @endif
                                             @endforeach
                                         </select>
                                     </div>
                                     <button type="submit" class="btn btn-primary">Update Subscription</button>
-                                </form>
-
-                                <!-- Checkout button -->
-                                <form action="{{ route('billing.checkout', $venue->id) }}" method="POST" class="mt-3">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success">Proceed to Checkout</button>
                                 </form>
                             </div>
                         </div>

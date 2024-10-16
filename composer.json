@@ -9,6 +9,7 @@
         "endroid/qr-code": "^5.0",
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
+        "xendit/xendit-php": "^6.0",
         "yajra/laravel-datatables": "^11.0"
     },
     "require-dev": {

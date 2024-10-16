@@ -36,7 +36,7 @@ class CardsDataTable extends DataTable
     public function query(Card $model): QueryBuilder
     {
         // Check the user's role
-        if(auth()->user()->role == 'admin') {
+        if (auth()->user()->role == 'admin') {
             // Admin role: retrieve all cards
             return $model->newQuery()->orderBy('id', 'desc');
         } else {
@@ -57,22 +57,22 @@ class CardsDataTable extends DataTable
     public function html(): HtmlBuilder
     {
         return $this->builder()
-                    ->setTableId('cards-table')
-                    ->columns($this->getColumns())
-                    ->minifiedAjax()
-                    //->dom('Bfrtip')
-                    ->orderBy(1)
-                    ->selectStyleSingle()
-                    ->scrollX(true)
-                    ->scrollCollapse(true) // Allow the table to resize when scrolling
-                    ->responsive(true) // Ensure table is responsive
-                    ->buttons([
-                        Button::make('excel'),
-                        Button::make('csv'),
-                        Button::make('pdf'),
-                        Button::make('print'),
-                        Button::make('reset'),
-                    ]);
+            ->setTableId('cards-table')
+            ->columns($this->getColumns())
+            ->minifiedAjax()
+            //->dom('Bfrtip')
+            ->orderBy(1)
+            ->selectStyleSingle()
+            ->scrollX(true)
+            ->scrollCollapse(true) // Allow the table to resize when scrolling
+            ->responsive(true) // Ensure table is responsive
+            ->buttons([
+                Button::make('excel'),
+                Button::make('csv'),
+                Button::make('pdf'),
+                Button::make('print'),
+                Button::make('reset'),
+            ]);
     }
 
     /**
@@ -80,17 +80,23 @@ class CardsDataTable extends DataTable
      */
     public function getColumns(): array
     {
-        return [
+        $columns = [
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)
                 ->width(150)
                 ->addClass('text-center'),
-            Column::make('id'),
             Column::make('name'),
             Column::make('status'),
             Column::make('token'),
         ];
+
+        // Add 'id' column only for admin users
+        if (auth()->user()->role == 'admin') {
+            array_splice($columns, 1, 0, [Column::make('id')]);
+        }
+
+        return $columns;
     }
 
     /**

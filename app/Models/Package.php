@@ -13,10 +13,10 @@ class Package extends Model
         'second_price',
         'status',
     ];
-    // Define the relationship to Memberships
-    public function memberships()
+    // Define the relationship to Subscriptions
+    public function subscriptions()
     {
-        return $this->hasMany(Membership::class);
+        return $this->hasMany(Subscription::class);
     }
 
     // Scopes

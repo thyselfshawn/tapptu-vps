@@ -12,13 +12,11 @@ use Illuminate\Support\Facades\Response;
 
 class QrController extends Controller
 {
-    public function qr_card($card)
+    public function show_qr($id)
     {
-        dd($card);
-        $card = Card::where('uuid', $card)->first();
-        dd(route('guest.check_card', ['card' => $card->uuid]));
-        if ($card) {
-            $qrCode = new QrCode(route('guest.check_card', ['card' => $card->uuid]));
+        $rfid = Card::findOrFail($id);
+        if ($rfid) {
+            $qrCode = new QrCode(config('app.url') . '/scan-qr?card=' . $rfid->uuid);
             // You can customize the QR code here (size, margin, encoding, etc.)
             $qrCode->setSize(300);
             $qrCode->setMargin(10);
@@ -35,9 +33,10 @@ class QrController extends Controller
         return response('RFID not found', 404);
     }
     
-    public function check_card($card)
+    public function scan_qr(Request $request)
     {
-        $rfid = Card::where('uuid', $card)->first();
+        $rfid = $request->query('card');
+        $rfid = Card::where('uuid', $rfid)->first();
         if ($rfid) {
             if($rfid->status == 'pending'){
                 session(['setup-card' => $rfid->uuid]);

@@ -14,6 +14,7 @@ class UserController extends Controller
 {
     // image directory in private storage
     protected $imagePath = 'images/';
+    protected $discPath = 'private';
 
     public function __construct()
     {
@@ -70,7 +71,7 @@ class UserController extends Controller
         if (!empty($request->avatar)) {
             // If the user has an old avatar, delete it
             if ($user->avatar && $user->avatar != 'avatar.png') {
-                Storage::disk('private')->delete($this->imagePath . $user->avatar);
+                Storage::disk($this->discPath)->delete($this->imagePath . $user->avatar);
             }
             $validatedData['avatar'] = $this->storeBase64($request->avatar);
         }
@@ -83,7 +84,7 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         if ($user->avatar && $user->avatar != 'avatar.png') {
-            Storage::disk('private')->delete($this->imagePath . $user->avatar);
+            Storage::disk($this->discPath)->delete($this->imagePath . $user->avatar);
         }
         $user->delete();
 
@@ -95,13 +96,13 @@ class UserController extends Controller
         $path = $this->imagePath . $filename;
         
         // Check if the file exists
-        if (!Storage::disk('private')->exists($path)) {
+        if (!Storage::disk($this->discPath)->exists($path)) {
             abort(404);
         }
 
         // Get the file contents
-        $file = Storage::disk('private')->get($path);
-        $mimeType = Storage::disk('private')->mimeType($path);
+        $file = Storage::disk($this->discPath)->get($path);
+        $mimeType = Storage::disk($this->discPath)->mimeType($path);
 
         // Return the file as a response
         return response($file, 200)
@@ -116,7 +117,7 @@ class UserController extends Controller
         $imageName = time() . '.png';
         
         // Store the image in the storage (e.g., private disk)
-        Storage::disk('private')->put($this->imagePath . $imageName, $imageBase64);
+        Storage::disk($this->discPath)->put($this->imagePath . $imageName, $imageBase64);
 
         return $imageName;
     }

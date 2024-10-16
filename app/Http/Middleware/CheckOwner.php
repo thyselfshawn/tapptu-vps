@@ -24,6 +24,8 @@ class CheckOwner
         // Check if the current user is an admin or the owner of the model
         if ($currentUser && ($currentUser->role === 'admin' || ($model && $currentUser->id === $model->user_id))) {
             return $next($request);
+        } else if ($currentUser && ($currentUser->role === 'admin' || ($model && $currentUser->id === $model->id))) {
+            return $next($request);
         }
 
         return redirect()->route('home')->with('error', 'Unauthorized access.');

@@ -36,7 +36,7 @@
                         @enderror
                     </div>
                     <input id="place" type="text" name="googleplaceid" hidden />
-                    <input id="review" type="text" name="googlereview" hidden />
+                    <input id="review" type="text" name="googlereviewstart" hidden />
                     <div class="col-12 form-group">
                         <label for="avatar">Logo</label>
                         <input type="file" class="form-control form-control-file" id="avatar" accept="image/*">
@@ -44,7 +44,7 @@
                             <img id="avatar-preview" alt="Avatar Preview" class="img-thumbnail"
                                 style="max-width: 200px; display: none;">
                             @if ($venue->logo)
-                                <img src="{{ route('guest.venues.image', ['filename' => $venue->logo]) }}" alt="Venue logo"
+                                <img src="{{ route('venues.image', ['filename' => $venue->logo]) }}" alt="Venue logo"
                                     id="oldavatar" class="img-fluid rounded-circle" style="max-width: 150px;"
                                     loading="lazy">
                             @endif
@@ -93,17 +93,16 @@
                                 @enderror
                             </div>
                         @endif
-                        <div class="col-12">
-                            <div class="btn-group" role="group" aria-label="Date Range">
-                                <input type="radio" class="btn-check" name="notification" id="notificationoff"
-                                    value="0" {{ old('notification') == 0 ? 'checked' : '' }}>
-                                <label class="btn btn-secondary" for="notificationoff">OFF</label>
-
-                                <input type="radio" class="btn-check" name="notification" id="notificationon"
-                                    value="1" {{ old('notification') == 1 ? 'checked' : '' }}>
-                                <label class="btn btn-secondary" for="notificationon">ON</label>
+                        <div class="col-12 mb-3">
+                            <label class="form-label d-block mb-2">Weekly email report</label>
+                            <div class="form-check form-switch">
+                                <input type="checkbox" class="form-check-input" name="notification" id="notificationToggle"
+                                    value="1"
+                                    {{ old('notification', $venue->notification) == 1 ? 'checked' : 'Off' }}>
+                                <label class="form-check-label" for="notificationToggle">
+                                    {{ old('notification', $venue->notification) == 1 ? 'On' : 'Off' }}
+                                </label>
                             </div>
-                            <label class="form-label">Weekly email report</label>
                         </div>
                         <div class="col-6 mt-3">
                             <button type="submit" class="btn btn-secondary">Update</button>
@@ -130,7 +129,7 @@
             reviewField = document.querySelector("#review");
 
             autocomplete = new google.maps.places.Autocomplete(nameField, {
-                fields: ["address_components", "geometry", "place_id"]
+                fields: ["address_components", "geometry", "place_id", "rating", "user_ratings_total"]
             });
             nameField.focus();
             autocomplete.addListener("place_changed", fillInAddress);
@@ -139,6 +138,7 @@
         function fillInAddress() {
             const place = autocomplete.getPlace();
             placeField.value = place.place_id;
+            reviewField.value = place.user_ratings_total;
             document.querySelector("#avatar").focus();
         }
 

@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Voucher;
-use App\Models\Membership;
+use App\Models\Subscription;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Venue extends Model
@@ -24,7 +24,6 @@ class Venue extends Model
         'googleplaceid',
         'googlereviewstart',
         'status',
-        'stripe_customer_id',
         'notification',
     ];
 
@@ -66,13 +65,13 @@ class Venue extends Model
         return $this->hasMany(Voucher::class);
     }
 
-    public function memberships(): HasMany
+    public function subscriptions(): HasMany
     {
-        return $this->hasMany(Membership::class);
+        return $this->hasMany(Subscription::class);
     }
 
-    public function currentMembership()
+    public function currentSubscription()
     {
-        return $this->memberships()->active()->latest()->first();
+        return $this->subscriptions()->active()->latest()->first();
     }
 }

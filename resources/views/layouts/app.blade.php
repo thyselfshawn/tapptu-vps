@@ -877,6 +877,7 @@
             /* Primary color border */
         }
     </style>
+    @stack('styles')
 </head>
 
 <body>
@@ -892,10 +893,10 @@
                         @endphp
 
                         @foreach ($venues as $item)
-                            @if ($item->currentMembership() && $item->currentMembership()->isEndingSoon(7))
+                            @if ($item->currentSubscription() && $item->currentSubscription()->isEndingSoon(7))
                                 <div class="alert alert-warning alert-dismissible fade show" role="alert">
                                     {{ $item->name }}'s membership ends in
-                                    {{ $item->currentMembership()->timeUntilEnds() }}.
+                                    {{ $item->currentSubscription()->timeUntilEnds() }}.
                                     Please renew soon!
                                     <button type="button" class="btn-close" data-bs-dismiss="alert"
                                         aria-label="Close"></button>

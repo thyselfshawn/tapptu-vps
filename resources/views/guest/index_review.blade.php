@@ -271,7 +271,7 @@ button {
 <div class="container-fluid">
     <div class="content text-center">
         <div class="text-content">
-            <img class="logo-img" src="{{ asset('logo.png') }}" style="width:150px;height:150px;" />
+            <img class="logo-img mb-3" src="{{ asset('logo.png') }}" />
             <p>Get wonderful rewards of discount oportunity by giving feedback</p>
         </div>
 

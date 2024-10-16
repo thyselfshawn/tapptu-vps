@@ -16,14 +16,14 @@ use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 
 class GuestController extends Controller
-{    
+{
     public function qr_card($card)
     {
         $card = Card::where('uuid', $card)->first();
         if ($card) {
-            if($card->status == CardStatusEnum::pending){
+            if ($card->status == CardStatusEnum::pending) {
                 return $this->generateQrResponse(route('guest.check_card', ['card' => $card->uuid]));
-            }else if($card->status == CardStatusEnum::attached){
+            } else if ($card->status == CardStatusEnum::attached) {
                 return $this->generateQrResponse(route('guest.view_card', ['venue' => $card->firstVenue()->slug, 'card' => $card->uuid]));
             }
         }
@@ -33,18 +33,26 @@ class GuestController extends Controller
     public function check_card($card)
     {
         $card = Card::where('uuid', $card)->first();
-        if($card){
-            if($card->status == CardStatusEnum::pending){
+        if ($card) {
+            if ($card->status == CardStatusEnum::pending) {
                 // save for 
                 session(['setup-card' => $card->uuid]);
+                if (auth()->user()) {
+                    if (auth()->user()->role == 'admin') {
+                        $venues = Venue::all();
+                    } else {
+                        $venues = auth()->user()->venues;
+                    }
+                    return view('guest.setup_card', compact('card', 'venues'));
+                }
                 return view('guest.setup_card', compact('card'));
-            }else if($card->status == CardStatusEnum::attached){
-                if(auth()->user() && auth()->user()->id == $card->firstVenue()->user_id){
+            } else if ($card->status == CardStatusEnum::attached) {
+                if (auth()->user() && auth()->user()->id == $card->firstVenue()->user_id) {
                     return redirect()->route('venues.edit', ['venue' => $card->firstVenue()->slug]);
                 }
                 $venue = $card->firstVenue();
                 return redirect()->route('guest.view_card', ['venue' => $venue->slug, 'card' => $card->uuid]);
-            }else{
+            } else {
                 return redirect()->route('guest.view_card', ['venue' => $card->firstVenue()->slug, 'card' => $card->uuid]);
             }
         }
@@ -68,17 +76,17 @@ class GuestController extends Controller
     public function view_voucher($venue, $uuid)
     {
         $venue = Venue::where('slug', $venue)->first();
-        if($venue){
+        if ($venue) {
             $voucher = Voucher::where('uuid', $uuid)->first();
             $this->storeTap($voucher->card_id, $venue->id, 'voucher_claim');
-            if($voucher->status == VoucherStatusEnum::pending){
+            if ($voucher->status == VoucherStatusEnum::pending) {
                 $this->claim_voucher($venue->slug, $voucher->uuid);
                 // return view('guest.view_voucher', compact('venue','voucher'));
-            }else if($voucher->status == VoucherStatusEnum::mistake){
+            } else if ($voucher->status == VoucherStatusEnum::mistake) {
                 return view('guest.message', [
                     'message' => 'Reviewer pressed claim button!'
                 ]);
-            }else if($voucher->status == VoucherStatusEnum::claimed){
+            } else if ($voucher->status == VoucherStatusEnum::claimed) {
                 return view('guest.message', [
                     'message' => 'Voucher already claimed!'
                 ]);
@@ -95,10 +103,10 @@ class GuestController extends Controller
     public function claim_voucher($venue, $uuid)
     {
         $venue = Venue::where('slug', $venue)->first();
-        if($venue){
+        if ($venue) {
             $voucher = Voucher::where('uuid', $uuid)->where('venue_id', $venue->id)->first();
-            if($voucher && $voucher->status == VoucherStatusEnum::pending){
-                if(auth()->user() && auth()->user()->id == $voucher->venue->user->id){
+            if ($voucher && $voucher->status == VoucherStatusEnum::pending) {
+                if (auth()->user() && auth()->user()->id == $voucher->venue->user->id) {
                     $voucher->update(['status' => VoucherStatusEnum::claimed]);
                     return view('guest.message', [
                         'message' => 'Voucher claimed!',
@@ -116,7 +124,7 @@ class GuestController extends Controller
         return view('guest.message', [
             'message' => 'No venue found!',
         ]);
-        
+
     }
 
     public function qr_voucher($venue, $uuid)
@@ -124,7 +132,7 @@ class GuestController extends Controller
         $venue = Venue::where('slug', $venue)->first();
         $voucher = Voucher::where('uuid', $uuid)->first();
         if ($voucher) {
-            
+
             return $this->generateQrResponse(route('guest.view_voucher', ['venue' => $venue->slug, 'uuid' => $voucher->uuid]));
         }
         return view('guest.message', [
@@ -135,12 +143,10 @@ class GuestController extends Controller
     // visitor voucher create
     public function create_voucher($venue, $card, $type)
     {
-        $type = $type;
-        
         $venue = Venue::where('slug', $venue)->first();
         $card = Card::where('uuid', $card)->first();
 
-        if(session('voucher-contact')){
+        if (session('voucher-contact')) {
             return redirect()->route('guest.create_review', ['venue' => $venue->slug, 'card' => $card->uuid]);
         }
         session(['review-type' => $type]);
@@ -157,7 +163,7 @@ class GuestController extends Controller
         ]);
         $instanceId = '16821';
         $validWhatsApp = $this->validate_whatsapp($instanceId, $request->input('phone'));
-        if(!$validWhatsApp){
+        if (!$validWhatsApp) {
             return redirect()->back()->with('error', 'Invalid whatsapp number!');
         }
         $venue = Venue::where('slug', $venue)->first();
@@ -167,7 +173,7 @@ class GuestController extends Controller
             'phone' => $request->input('phone'),
             'uuid' => str()->uuid(),
         ]);
-        if($contact){
+        if ($contact) {
             session(['voucher-contact' => $contact->id]);
             $voucher = Voucher::create([
                 'text' => $venue->voucher,
@@ -176,20 +182,20 @@ class GuestController extends Controller
                 'card_id' => $card->id,
                 'venue_id' => $venue->id,
             ]);
-            if($voucher){
+            if ($voucher) {
                 $sent = $this->sendWhatsAppMessage($contact->phone, route('guest.qr_voucher', ['venue' => $venue->slug, 'uuid' => $voucher->uuid]));
-                if($sent){
+                if ($sent) {
                     session(['voucher-message' => $sent]);
                     session(['voucher-uuid' => $voucher->uuid]);
                     $this->storeTap($card->id, $venue->id, 'voucher_sent');
                 }
             }
-            
-            if(session('review-type') === 'google_feedback'){
+
+            if (session('review-type') === 'google_feedback') {
                 $url = 'https://search.google.com/local/writereview?placeid=' . $venue->googleplaceid;
                 return redirect()->away($url);
             }
-            return redirect()->route('guest.create_review', ['venue' => $venue->slug, 'card' => $card->uuid]);        
+            return redirect()->route('guest.create_review', ['venue' => $venue->slug, 'card' => $card->uuid]);
         }
     }
 
@@ -207,28 +213,28 @@ class GuestController extends Controller
         $type = session('review-type');
         $venue = Venue::where('slug', $venue)->first();
         $card = Card::where('uuid', $card)->first();
-        if($venue->slug){
-            if(session('voucher-contact')){
+        if ($venue->slug) {
+            if (session('voucher-contact')) {
                 $contact = Contact::findOrFail(session('voucher-contact'));
                 $name = $contact->name;
                 $phone = $contact->phone;
                 session()->forget('voucher-contact');
-            }else{
+            } else {
                 $name = $request->input('name');
                 $phone = $request->input('phone');
             }
             $reviewExist = Review::where('phone', $phone)->where('card_id', $card->id)->exists();
-            if(!$reviewExist){
+            if (!$reviewExist) {
                 $review = Review::create([
                     'name' => $name,
                     'phone' => $phone,
                     'type' => $type,
                     'venue_id' => $venue->id,
                     'card_id' => $card->id,
-                    'message'=> $request->input('message')
+                    'message' => $request->input('message')
                 ]);
-                if($review){
-                    if(session('voucher-message')){
+                if ($review) {
+                    if (session('voucher-message')) {
                         $voucher = session('voucher-uuid');
                         session()->forget('voucher-message');
                         session()->forget('voucher-uuid');
@@ -236,7 +242,7 @@ class GuestController extends Controller
                     }
                     return view('guest.message', [
                         'message' => 'Review created created!',
-                    ]); 
+                    ]);
 
                 }
                 return view('guest.message', [
@@ -245,7 +251,7 @@ class GuestController extends Controller
             }
             return view('guest.message', [
                 'message' => 'You have already reviewed this card!',
-            ]);            
+            ]);
         }
         return view('guest.message', [
             'message' => 'Venue not found!',
@@ -307,22 +313,22 @@ class GuestController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, [
-        CURLOPT_URL => "https://waapi.app/api/v1/instances/16821/client/action/send-message",
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => "",
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => "POST",
-        CURLOPT_POSTFIELDS => json_encode([
-            'chatId' => $number . '@c.us',
-            'message' => $message
-        ]),
-        CURLOPT_HTTPHEADER => [
-            "accept: application/json",
-            "authorization: Bearer cYksPNdqIYLktQKVokO52E0RgXQ6Z9V9Fjmp12uG23f49385",
-            "content-type: application/json"
-        ],
+            CURLOPT_URL => "https://waapi.app/api/v1/instances/16821/client/action/send-message",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode([
+                'chatId' => $number . '@c.us',
+                'message' => $message
+            ]),
+            CURLOPT_HTTPHEADER => [
+                "accept: application/json",
+                "authorization: Bearer cYksPNdqIYLktQKVokO52E0RgXQ6Z9V9Fjmp12uG23f49385",
+                "content-type: application/json"
+            ],
         ]);
 
         $response = curl_exec($curl);

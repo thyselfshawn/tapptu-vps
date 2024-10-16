@@ -9,9 +9,10 @@ use App\Enums\VenueStatusEnum;
 use App\Enums\VoucherStatusEnum;
 use App\Enums\ReviewTypeEnum;
 use App\Enums\TapTypeEnum;
+use App\Enums\PackageNameEnum;
+use App\Enums\PackageTypeEnum;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -38,7 +39,6 @@ return new class extends Migration
             $table->string('instaurl')->nullable();
             $table->string('googleplaceid')->nullable();
             $table->string('googlereviewstart')->nullable();
-            $table->string('stripe_customer_id')->nullable();
             $table->boolean('notification')->default(true);
             $table->enum('status', VenueStatusEnum::values())->default(VenueStatusEnum::pending->value);
             $table->timestamps();
@@ -58,21 +58,21 @@ return new class extends Migration
 
         Schema::create('packages', function (Blueprint $table) {
             $table->id();
-            $table->enum('name', ['standard', 'premium']);            
-            $table->enum('type', ['monthly', 'yearly']);
+            $table->enum('name', PackageNameEnum::values())->default(PackageNameEnum::standard->value);
+            $table->enum('type', PackageTypeEnum::values())->default(PackageTypeEnum::month->value);
             $table->integer('first_price');
             $table->integer('second_price');
-            $table->string('stripe_price_id')->nullable();
             $table->boolean('status')->default(true);
             $table->timestamps();
         });
-        
-        Schema::create('memberships', function (Blueprint $table) {
+
+        Schema::create('subscriptions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('venue_id');
             $table->unsignedBigInteger('package_id');
+            $table->string('xendit_plan_id')->nullable();
+            $table->string('amount')->nullable();
             $table->boolean('status')->defaul(false);
-            $table->string('stripe_subscription_id')->nullable();
             $table->timestamp('end_at');
             $table->timestamps();
 
@@ -93,7 +93,7 @@ return new class extends Migration
 
             $table->foreign('card_id')->references('id')->on('cards')->onDelete('cascade');
             $table->foreign('venue_id')->references('id')->on('venues')->onDelete('cascade');
-            
+
         });
 
         Schema::create('contacts', function (Blueprint $table) {
@@ -143,11 +143,12 @@ return new class extends Migration
 
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
-            $table->string('wa_number');
-            $table->string('wa_instanceid');
-            $table->string('wa_accesstoken');
-            $table->string('stripe_publishable');
-            $table->string('stripe_secret');
+            $table->string('wa_number')->nullable();
+            $table->string('wa_instanceid')->nullable();
+            $table->string('wa_accesstoken')->nullable();
+            $table->string('payment_public')->nullable();
+            $table->string('payment_secret')->nullable();
+            $table->string('payment_webhook_secret')->nullable();
             $table->timestamps();
         });
     }
@@ -161,7 +162,7 @@ return new class extends Migration
         Schema::dropIfExists('venues');
         Schema::dropIfExists('venue_cards');
         Schema::dropIfExists('packages');
-        Schema::dropIfExists('memberships');
+        Schema::dropIfExists('subscriptions');
         Schema::dropIfExists('reviews');
         Schema::dropIfExists('contacts');
         Schema::dropIfExists('contact_reviews');

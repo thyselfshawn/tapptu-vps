@@ -83,9 +83,9 @@
                 <li class="border-top my-3"></li>
                 @if (auth()->user()->role == 'admin')
                     <li class="mb-3">
-                        <a class="nav-link {{ Route::currentRouteNamed('memberships.index') ? 'active text-primary' : '' }}"
-                            href="{{ route('memberships.index') }}"><i class="bi bi-safe2"></i>
-                            {{ __('Memberships') }}</a>
+                        <a class="nav-link {{ Route::currentRouteNamed('subscriptions.index') ? 'active text-primary' : '' }}"
+                            href="{{ route('subscriptions.index') }}"><i class="bi bi-safe2"></i>
+                            {{ __('Subscriptions') }}</a>
                     </li>
                     <li class="mb-1">
                         <button
@@ -126,6 +126,11 @@
                                 </li>
                             </ul>
                         </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Route::currentRouteNamed('settings.show') || Route::currentRouteNamed('settings.edit') ? 'active text-primary' : '' }}"
+                            href="{{ route('settings.show') }}"><i class="bi bi-qr-code-scan"></i>
+                            {{ __('Settings') }}</a>
                     </li>
                 @endif
                 <hr>

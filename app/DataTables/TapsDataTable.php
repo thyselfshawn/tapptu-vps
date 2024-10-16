@@ -11,8 +11,6 @@ use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Services\DataTable;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cookie;
 
 class TapsDataTable extends DataTable
 {
@@ -26,7 +24,7 @@ class TapsDataTable extends DataTable
         return (new EloquentDataTable($query))
             ->editColumn('created_at', function ($tap) {
                 return $tap->created_at->format('Y-m-d'); // Convert created_at to human-readable format
-            })  
+            })
             ->editColumn('type', function ($tap) {
                 // Format the tap type value for display
                 return ucfirst(str_replace('_', ' ', $tap->type->value));

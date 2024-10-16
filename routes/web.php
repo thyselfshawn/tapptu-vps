@@ -2,15 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CardController;
-use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\VenueController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\PackageController;
-use App\Http\Controllers\MembershipController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\SettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,7 +24,10 @@ use App\Http\Controllers\BillingController;
 */
 
 use Illuminate\Support\Facades\Artisan;
-Route::get('/run', function(){
+Route::get('/clear', function () {
+    return Artisan::call('optimize:clear');
+});
+Route::get('/run', function () {
     return Artisan::call('migrate:fresh --force --seed');
 });
 Route::get('/', function () {
@@ -34,57 +37,72 @@ Route::get('/', function () {
 Auth::routes();
 
 // admin urls
-Route::middleware(['auth'])->group(function() {
+Route::middleware(['auth'])->group(function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home');
 
     // only admin accessible
-    Route::middleware(['admin'])->group(function() {
+    Route::middleware(['admin'])->group(function () {
         // packages
         Route::resource('packages', PackageController::class)->except(['show']);
 
-        // memberships
-        Route::resource('memberships', MembershipController::class);
+        // subscriptions
+        Route::resource('subscriptions', SubscriptionController::class);
+
+        Route::get('/settings', [SettingController::class, 'show'])->name('settings.show');
+        Route::get('/settings/edit', [SettingController::class, 'edit'])->name('settings.edit');
+        Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
     });
-    // only active members and admin accessible
-    Route::middleware(['membership'])->group(function() {
-        // cards
-        Route::resource('cards', CardController::class);
-        Route::post('/cards/download', [CardController::class, 'download'])->name('cards.download');
+    // cards
+    Route::resource('cards', CardController::class);
+    Route::post('/cards/download', [CardController::class, 'download'])->name('cards.download');
 
-        // venues
-        Route::resource('venues', VenueController::class)->parameters(['venues' => 'venue:slug']);
-        Route::get('/attach-card/{id}/{card}', [VenueController::class, 'attach_card'])->name('attach_card');
-        // vouchers
-        Route::resource('vouchers', VoucherController::class);
+    // venues
+    Route::resource('venues', VenueController::class)->parameters(['venues' => 'venue:slug']);
+    Route::get('/venues/attach-card/{id}/{card}', [VenueController::class, 'attach_card'])->name('attach_card');
+    Route::get('logo/{filename}', [VenueController::class, 'image'])
+        ->name('venues.image');
+    // vouchers
+    Route::resource('vouchers', VoucherController::class);
 
-        // users
-        Route::resource('users', App\Http\Controllers\UserController::class);
-        Route::get('media/user/{filename}', [App\Http\Controllers\UserController::class, 'image'])
+    // users
+    Route::resource('users', App\Http\Controllers\UserController::class);
+    Route::get('avatar/{filename}', [App\Http\Controllers\UserController::class, 'image'])
         ->name('users.image');
 
-        // reports
-        Route::get('/reports/tap', [ReportController::class, 'tap_report'])->name('reports.tap_report');
-        Route::get('/reports/review', [ReportController::class, 'review_report'])->name('reports.review_report');
-        Route::get('/reports/google', [ReportController::class, 'google_report'])->name('reports.google_report');
+    // reports
+    Route::get('/reports/tap', [ReportController::class, 'tap_report'])->name('reports.tap_report')->middleware(['standard', 'premium']);
+    Route::get('/reports/review', [ReportController::class, 'review_report'])->name('reports.review_report')->middleware('premium');
+    Route::get('/reports/google', [ReportController::class, 'google_report'])->name('reports.google_report')->middleware('premium');
 
-        // reports filter
-        Route::get('/tap-filter', [ReportController::class, 'tap_filter'])->name('reports.tap_filter');
-        Route::get('/review-filter', [ReportController::class, 'review_filter'])->name('reports.review_filter');
-        Route::get('/google-filter', [ReportController::class, 'google_filter'])->name('reports.google_filter');
-    });
-    
-    Route::get('/memberships/subscribe/{id}', [MembershipController::class, 'subscribe'])->name('memberships.subscribe');
+    // reports filter
+    Route::get('/tap-filter', [ReportController::class, 'tap_filter'])->name('reports.tap_filter');
+    Route::get('/review-filter', [ReportController::class, 'review_filter'])->name('reports.review_filter');
+    Route::get('/google-filter', [ReportController::class, 'google_filter'])->name('reports.google_filter');
+
+    // Route::get('/subscriptions/subscribe/{venue}', [SubscriptionController::class, 'subscribe'])->name('subscriptions.subscribe');
+    // Route::post('billing/subscribe/{venue}', [SubscriptionController::class, 'subscribe'])->name('billing.subscribe');
     Route::get('/packages/buy', [PackageController::class, 'buy_package'])->name('packages.buy_package');
 
-    Route::get('billing/subscription/{venue}', [BillingController::class, 'showSubscriptionPage'])->name('billing.subscription');
-    Route::post('billing/subscribe/{venue}', [BillingController::class, 'createOrUpdateSubscription'])->name('billing.subscribe');
-    Route::post('billing/checkout/{venue}', [BillingController::class, 'checkout'])->name('billing.checkout');
-    Route::get('billing/success/{venue}', [BillingController::class, 'subscriptionSuccess'])->name('billing.success');
-    Route::get('billing/cancel/{venue}', [BillingController::class, 'subscriptionCancel'])->name('billing.cancel');
+
+    // Create a subscription for a venue
+    Route::post('/billing/subscription', [BillingController::class, 'createSubscription'])->name('billing.createSubscription');
+
+    // Add a card to an active subscription
+    Route::post('/billing/add-card', [BillingController::class, 'addCardToSubscription'])->name('billing.addCardToSubscription');
+
+    // Handle successful payment redirection (with venue_id as a parameter)
+    Route::get('/billing/success/{venue_id}', [BillingController::class, 'paymentSuccess'])->name('billing.success');
+
+    // Handle failed payment redirection (with venue_id as a parameter)
+    Route::get('/billing/failed/{venue_id}', [BillingController::class, 'paymentFailed'])->name('billing.failed');
+
+    // Webhook to handle updates from Xendit (payment success, subscription status)
+    Route::post('/billing/webhook', [BillingController::class, 'handleWebhook'])->name('billing.webhook');
+
 });
 
 // guest urls
-Route::name('guest.')->group(function(){
+Route::name('guest.')->group(function () {
     Route::get('/card/{card}', [GuestController::class, 'qr_card'])->name('qr_card');
     Route::get('/card-check/{card}', [GuestController::class, 'check_card'])->name('check_card');
     Route::get('/{venue}/{card}', [GuestController::class, 'view_card'])->name('view_card');
@@ -99,7 +117,4 @@ Route::name('guest.')->group(function(){
     // guest review urls
     Route::get('/{venue}/review/{card}', [GuestController::class, 'create_review'])->name('create_review');
     Route::post('/{venue}/review/{card}', [GuestController::class, 'store_review'])->name('store_review');
-    Route::get('media/logo/{filename}', [VenueController::class, 'image'])
-        ->name('venues.image');
 });
-

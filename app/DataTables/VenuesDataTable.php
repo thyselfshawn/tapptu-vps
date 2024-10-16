@@ -25,7 +25,7 @@ class VenuesDataTable extends DataTable
             })
             ->addColumn('venue', function (Venue $venue) {
                 return '<a href="' . route('venues.show', $venue->slug) . '">
-                            <img src="' . route('guest.venues.image', ['filename' => $venue->logo]) .'" alt="Venue Logo" class="img-fluid rounded-circle" height="30" width="30" loading="lazy">
+                            <img src="' . route('venues.image', ['filename' => $venue->logo]) .'" alt="Venue Logo" class="img-fluid rounded-circle" height="30" width="30" loading="lazy">
                             ' . $venue->name . '
                         </a>';
             })
@@ -36,13 +36,13 @@ class VenuesDataTable extends DataTable
                 $statusLabel = $venue->status; // Assuming you have a label method
 
                 switch ($venue->status) {
-                    case \App\Enums\VenueStatusEnum::pending:
+                    case \App\Enums\VenueStatusEnum::trial:
                         return '<span class="badge badge-primary">' . $statusLabel . '</span>';
-                    case \App\Enums\VenueStatusEnum::online:
+                    case \App\Enums\VenueStatusEnum::paid:
                         return '<span class="badge badge-success">' . $statusLabel . '</span>';
-                    case \App\Enums\VenueStatusEnum::offline:
+                    case \App\Enums\VenueStatusEnum::expired:
                         return '<span class="badge badge-danger">' . $statusLabel . '</span>';
-                    case \App\Enums\VenueStatusEnum::canceled:
+                    case \App\Enums\VenueStatusEnum::pending:
                         return '<span class="badge badge-warning">' . $statusLabel . '</span>';
                     default:
                         return '<span class="badge badge-dark">' . $statusLabel . '</span>';

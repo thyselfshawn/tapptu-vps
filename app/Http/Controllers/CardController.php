@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use App\Models\Card;
 use App\Http\Requests\StoreCardRequest;
@@ -15,13 +14,13 @@ use App\Enums\CardStatusEnum;
 use App\DataTables\CardsDataTable;
 
 class CardController extends Controller
-{    
+{
     public function __construct()
     {
         // Only admins can access
         $this->middleware('admin')->only(['create', 'store', 'show', 'edit', 'update', 'destroy', 'download']);
     }
-    
+
     public function index(CardsDataTable $dataTable)
     {
         return $dataTable->render('cards.index');
@@ -77,10 +76,10 @@ class CardController extends Controller
         $cardTo = $request->input('cardto');
         $cardFrom = $request->input('cardfrom');
         $downloadType = $request->input('type');
-        if ($downloadType == 'qr'){
+        if ($downloadType == 'qr') {
             $filePath = $this->download_qr($cardFrom, $cardTo);
         }
-        if ($downloadType == 'csv'){
+        if ($downloadType == 'csv') {
             $filePath = $this->download_csv($cardFrom, $cardTo);
         }
 
@@ -101,19 +100,19 @@ class CardController extends Controller
         for ($i = $from; $i <= $to; $i++) {
             $card = Card::findOrFail($i); // Find the card by ID
             // Generate the URL for the card
-            if($card->status == CardStatusEnum::pending){
+            if ($card->status == CardStatusEnum::pending) {
                 $url = route('guest.qr_card', ['card' => $card->uuid]);
-            }else if($card->status == CardStatusEnum::attached){
+            } else if ($card->status == CardStatusEnum::attached) {
                 $url = route('guest.view_card', ['venue' => $card->firstVenue()->slug, 'card' => $card->uuid]);
             }
-            
+
             // Create the QR code
             $qrCode = new QrCode($url);
             $qrCode->setSize(300);
             $qrCode->setMargin(10);
-            
+
             $result = $writer->write($qrCode);
-            
+
             // Save the QR code image to the 'downloads' directory in public
             $filePath = $downloadDir . '/qr_code_' . $card->id . '.png';
             file_put_contents($filePath, $result->getString());
@@ -156,7 +155,7 @@ class CardController extends Controller
         // Loop through the range of card IDs and generate data
         for ($i = $from; $i <= $to; $i++) {
             $card = Card::findOrFail($i); // Find the card by ID
-            
+
             // Generate the link based on the card's status
             $link = route('guest.qr_card', ['card' => $card->uuid]);
 

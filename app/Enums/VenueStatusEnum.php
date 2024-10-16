@@ -5,9 +5,9 @@ namespace App\Enums;
 enum VenueStatusEnum: string
 {
     case pending = 'pending';
-    case online = 'online';
-    case offline = 'offline';
-    case canceled = 'canceled';
+    case trial = 'trial';
+    case paid = 'paid';
+    case expired = 'expired';
 
     public static function values(): array
     {

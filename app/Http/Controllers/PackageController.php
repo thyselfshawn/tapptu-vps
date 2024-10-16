@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Package;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 
 class PackageController extends Controller
@@ -22,13 +23,15 @@ class PackageController extends Controller
     {
         $request->validate([
             'name' => 'required|in:standard,premium',
-            'type' => 'required|in:monthly,yearly',
+            'type' => 'required|in:month,year',
             'first_price' => 'required|integer',
             'second_price' => 'required|integer',
             'status' => 'boolean'
         ]);
 
+        // Create Package in database
         Package::create($request->all());
+
         return redirect()->route('packages.index')->with('success', 'Package created successfully.');
     }
 
@@ -41,13 +44,15 @@ class PackageController extends Controller
     {
         $request->validate([
             'name' => 'required|in:standard,premium',
-            'type' => 'required|in:monthly,yearly',
+            'type' => 'required|in:month,year',
             'first_price' => 'required|integer',
             'second_price' => 'required|integer',
             'status' => 'boolean'
         ]);
 
+        // Update Package in database
         $package->update($request->all());
+
         return redirect()->route('packages.index')->with('success', 'Package updated successfully.');
     }
 

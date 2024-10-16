@@ -5,10 +5,8 @@ namespace App\Enums;
 enum CardStatusEnum: string
 {
     case pending = 'pending';
-    case setup = 'setup';
-    case trial = 'trial';
-    case paid = 'paid';
     case attached = 'attached';
+    case paused = 'paused';
 
     public static function values(): array
     {
